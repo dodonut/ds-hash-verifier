@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"net/http"
-	"os/exec"
 	"strings"
 )
 
@@ -15,7 +14,7 @@ func main() {
 
 		file, err := GetFileFromForm(request)
 		if err != nil {
-			fmt.Println("Nao foi possivel armazenar o arquivo.")
+			fmt.Println("Nao foi possivel obter arquivo pelo form.")
 			return
 		}
 
@@ -25,12 +24,12 @@ func main() {
 			return
 		}
 
-		err := partitionFile(*fileName)
+		err = partitionFile(*fileName)
 		if err != nil {
 			fmt.Println("Erro ao particionar arquivo")
 		}
 
-		Process(hash)
+		Process(hash, *fileName)
 	})
 
 	fmt.Println("Listening to 8080")

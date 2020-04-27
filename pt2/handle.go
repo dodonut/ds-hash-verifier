@@ -23,6 +23,7 @@ func GetFileFromForm(r *http.Request) (*File, error) {
 	//max value accepted for file 10 MB
 	err := r.ParseMultipartForm(10 << 20)
 	if err != nil {
+		fmt.Println("Arquivo maior que 10MB")
 		return nil, err
 	}
 
@@ -65,9 +66,9 @@ func SaveFile(file multipart.File) (*string, error) {
 	return &now, nil
 }
 
-func readAsync(filepath, hash string) {
+func readAsync(filepath, hash string, found chan bool) {
 	lineChan := make(chan string, 1000)
-	found := make(chan bool, 1)
+
 	var wg sync.WaitGroup
 	wg.Add(4)
 
@@ -77,11 +78,6 @@ func readAsync(filepath, hash string) {
 	go readFileAsync(filepath, lineChan)
 
 	wg.Wait()
-	close(found)
-	ok := <-found
-	if !ok {
-		fmt.Println("Falha ao encontrar senha.")
-	}
 
 }
 
@@ -117,10 +113,19 @@ func readFileAsync(filepath string, lineChan chan string) {
 	close(lineChan)
 }
 
-func Process(hash string) {
-	var wg sync.WaitGroup
-	wg.Add(4)
+func Process(hash, dirpath string) {
+	found := make(chan bool, 1)
 
-	go readAsync()
+	go readAsync(dirpath+"/xaa",hash, found)
+	go readAsync(dirpath+"/xab",hash, found)
+	go readAsync(dirpath+"/xac",hash, found)
+	go readAsync(dirpath+"/xad",hash, found)
+
+	<- found
+	close(found)
+	ok := <-found
+	if !ok {
+		fmt.Println("Falha ao encontrar senha.")
+	}
 }
 
