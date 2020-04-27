@@ -66,18 +66,11 @@ func SaveFile(file multipart.File) (*string, error) {
 	return &now, nil
 }
 
-func readAsync(filepath, hash string, found chan bool) {
+func readAsync(filepath, hash string, found chan bool, wg *sync.WaitGroup) {
 	lineChan := make(chan string, 1000)
 
-	var wg sync.WaitGroup
-	wg.Add(4)
-
-	for i := 0; i < 4; i++ {
-		go processLine(hash, lineChan, found, &wg)
-	}
+	go processLine(hash, lineChan, found, wg)
 	go readFileAsync(filepath, lineChan)
-
-	wg.Wait()
 
 }
 
@@ -113,19 +106,26 @@ func readFileAsync(filepath string, lineChan chan string) {
 	close(lineChan)
 }
 
-func Process(hash, dirpath string) {
+func Process(hash, dirpath string, writer http.ResponseWriter) {
 	found := make(chan bool, 1)
 
-	go readAsync(dirpath+"/xaa",hash, found)
-	go readAsync(dirpath+"/xab",hash, found)
-	go readAsync(dirpath+"/xac",hash, found)
-	go readAsync(dirpath+"/xad",hash, found)
+	var wg sync.WaitGroup
+	wg.Add(4)
 
-	<- found
+
+	go readAsync(dirpath+"/xaa",hash, found, &wg)
+	go readAsync(dirpath+"/xab",hash, found, &wg)
+	go readAsync(dirpath+"/xac",hash, found, &wg)
+	go readAsync(dirpath+"/xad",hash, found, &wg)
+
+	wg.Wait()
+
 	close(found)
 	ok := <-found
 	if !ok {
-		fmt.Println("Falha ao encontrar senha.")
+		fmt.Fprint(writer,"Falha ao encontrar senha.")
+	} else {
+		fmt.Fprint(writer, "Encontrado.")
 	}
 }
 

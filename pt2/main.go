@@ -29,7 +29,7 @@ func main() {
 			fmt.Println("Erro ao particionar arquivo")
 		}
 
-		Process(hash, *fileName)
+		Process(hash, *fileName, writer)
 	})
 
 	fmt.Println("Listening to 8080")
